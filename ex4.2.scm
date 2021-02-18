@@ -1,11 +1,10 @@
-;; The evaluator
-(define (eval exp env)
+(define (mc-eval exp env)
   (cond ((self-evaluating? exp) exp)
 	((variable? exp) (lookup-variable-value exp env))
-	((quoted? exp) (text-of-quotion exp))
-	((application? exp) ;; Application is checked before the rest
-	 (apply (eval (operator exp) env)
-		(list-of-values (operands exp) env)))
+	((quoted? exp) (text-of-quotation exp))
+	((application? exp)
+	 (mc-apply (mc-eval (operator exp) env)
+		   (list-of-values (operands exp) env)))
 	((assignment? exp) (eval-assignment exp env))
 	((definition? exp) (eval-definition exp env))
 	((if? exp) (eval-if exp env))
@@ -15,14 +14,10 @@
 			 env))
 	((begin? exp)
 	 (eval-sequence (begin-actions exp) env))
-	((cond? exp) (eval (cond->if exp) env))
+	((cond? exp) (mc-eval (cond->if exp) env))
 	(else
-	 (error "Unknown expression type -- EVAL" exp))))
+	 (error "Unknown expression type -- MC-EVAL" exp))))
 
-;; Application syntax procedures
-(define (application? exp)
-  (tagged-list? exp 'call))
-
+(define (application? exp) (tagged-list? exp 'call))
 (define (operator exp) (cadr exp))
-
 (define (operands exp) (cddr exp))
